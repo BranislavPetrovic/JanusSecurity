@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../src/c/janus/export.h
+
+../src/c/janus/interleave.h
+janus/types.h
+-
+janus/export.h
+-
+
+../src/c/janus/types.h
+float.h
+-
+math.h
+-
+janus/config.h
+-
+
+/home/ttm4128/Downloads/janus-c-3.0.5/tests/c/interleaver.c
+stdlib.h
+-
+stdio.h
+-
+janus/interleave.h
+-
+
+cmake_generated/janus/config.h
+
