@@ -120,7 +120,7 @@ public:
      */
     void Teardown();
 
-private:
+public:
     NodeContainer m_nodes; //!< UAN nodes
     std::map<Ptr<Node>, Ptr<Socket> > m_sockets; //!< send and receive sockets
     double timestamp;
@@ -128,6 +128,10 @@ private:
     double rtt;
     ulong protI = 0;
     int pktNum;
+    Ptr<UniformRandomVariable> uniformRandomVariable = CreateObject<UniformRandomVariable> ();
+    int numFails;
+    ulong totRTT = 0;
+    float noiseBench = .1;
 };
 
 UanExperiment::UanExperiment() {
@@ -139,7 +143,7 @@ UanExperiment::SetupPositions() {
     mobilityHelper.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobilityHelper.Install(m_nodes);
     m_nodes.Get(0)->GetObject<MobilityModel> ()->SetPosition(Vector(0, 0, 0));
-    m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(1, 0, 0));
+    m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(10, 0, 0));
 }
 
 void
@@ -155,13 +159,14 @@ UanExperiment::SetupCommunications() {
 void
 UanExperiment::PrintReceivedPacket(Ptr<Socket> socket) {
     Address srcAddress;
-    double distance = m_nodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ().x;
+    //double distance = m_nodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ().x;
+    double avgRTT;
     while (socket->GetRxAvailable() > 0) {
         Ptr<Packet> packet1 = socket->RecvFrom(srcAddress);
         PacketSocketAddress packetSocketAddress5 = PacketSocketAddress::ConvertFrom(srcAddress);
         srcAddress = packetSocketAddress5.GetPhysicalAddress();
         
-        uint32_t k;
+        //uint32_t k;
         int l;
         double a, b, c, d;
         string strpkt1, strpkt2, strpkt3, strpkt4, strpkt5;
@@ -275,15 +280,26 @@ UanExperiment::PrintReceivedPacket(Ptr<Socket> socket) {
             d = 5 * ((double) l / 80.0) * 1000 + 0.0160203; // janus TX + generation-encryption
 
             timestamp = a + b + c + d;
-            rtt = timestamp - rtt;
-            NS_LOG_UNCOND(to_string(distance) << ", " << to_string(rtt));
-            distance += 10;
-            m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(distance, 0, 0));
-
-            if (protI == 1) {
-                k = timestamp;
+            rtt = timestamp - rtt + numFails * 420000;
+            totRTT += rtt;
+            //NS_LOG_UNCOND(to_string(distance) << ", " << to_string(rtt));
+            
+            if (noiseBench < 1) {
+                if (protI % 200 == 0) {
+                    avgRTT = totRTT / 100;
+                    NS_LOG_UNCOND("noiseBench: " << noiseBench << " avgRTT: " << avgRTT);
+                    totRTT = 0;
+                    noiseBench += .1;
+                }
             }
-            Simulator::Schedule(MilliSeconds(420000 - k), &UanExperiment::SendPacket1To1, this); 
+            
+            //distance += 10;
+            //m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(distance, 0, 0));
+
+//            if (protI == 1) {
+//                k = timestamp;
+//            }
+            Simulator::Schedule(MilliSeconds(0), &UanExperiment::SendPacket1To1, this); 
         } 
             
         in1.close();
@@ -340,6 +356,8 @@ void UanExperiment::SendPacket1To1() {
     node = m_nodes.Begin();
     protI++;
     pktNum = 1;
+    numFails = 0;
+    double noise = uniformRandomVariable->GetValue (0, 1);
     
     string strpkt1;
     ifstream in1("/home/ttm4128/ccmnocargopkt1.txt", ios_base::in);
@@ -371,9 +389,18 @@ void UanExperiment::SendPacket1To1() {
     Ptr<Packet> pkt1 = Create<Packet> (janusDecArr1, l / 8);
     delete janusDecArr1;
     
+    while (noise >= noiseBench) {
+        //NS_LOG_UNCOND("noise = " << noise);
+        numFails++;
+        protI++;
+        noise = uniformRandomVariable->GetValue (0, 1);
+    } 
+
+    //NS_LOG_UNCOND("numFails = " << numFails);
+    rtt = (double) (Simulator::Now().GetMilliSeconds());
+    timestamp = oneWay = (double) Simulator::Now().GetMilliSeconds() + 0.0160203 + ((double) l / 80.0) * 1000; // Now + generation-encryption + Janus encoding
     Simulator::Schedule(Seconds(0), &UanExperiment::SendSinglePacket, this, *node, pkt1, dst);
-    rtt = (double)(Simulator::Now().GetMilliSeconds());
-    timestamp = oneWay = (double)Simulator::Now().GetMilliSeconds() + 0.0160203 + ((double)l / 80.0) * 1000; // Now + generation-encryption + Janus encoding
+    
     //NS_LOG_UNCOND("Node 0 | sent 1 packet to 1, timestamp: " << to_string(timestamp));
 }
 
@@ -786,11 +813,13 @@ main(int argc, char *argv[]) {
     UanExperiment experiment;
     experiment.Prepare();
 
-    Simulator::Stop(Days(6));
+    Simulator::Stop(Hours(6));
     Simulator::Run();
     Simulator::Destroy();
 
     experiment.Teardown();
 
+    //double avg = UanExperiment::totRTT / UanExperiment::protI;
+    //NS_LOG_UNCOND("Average RTT: " << avg);
     return 0;
 }
