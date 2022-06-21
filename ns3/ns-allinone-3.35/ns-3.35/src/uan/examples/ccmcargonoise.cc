@@ -127,7 +127,7 @@ UanExperiment::SetupPositions() {
     mobilityHelper.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobilityHelper.Install(m_nodes);
     m_nodes.Get(0)->GetObject<MobilityModel> ()->SetPosition(Vector(0, 0, 0));
-    m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(10, 0, 0));
+    m_nodes.Get(1)->GetObject<MobilityModel> ()->SetPosition(Vector(10000, 0, 0));
 }
 
 void

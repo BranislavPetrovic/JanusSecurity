@@ -153,15 +153,15 @@ UanExperiment::PrintReceivedPacket(Ptr<Socket> socket) {
         int l;
         double a, b, c, d;
         string strpkt1;
-        ifstream in1("/home/ttm4128/ccmcargopkt.txt", ios_base::in);
+        ifstream in1("/home/ttm4128/aegiscargopkt", ios_base::in);
         
         if(Mac8Address::ConvertFrom(srcAddress) == 0) {
             in1 >> strpkt1;
             l = strpkt1.length();
             a = (double) Simulator::Now().GetMilliSeconds();
-            b = 0.0161610; // decryption-verification
+            b = 0.0373279; // decryption-verification
             c = ((double) l / 80.0) * 1000; // janus RX
-            d = ((double) l / 80.0) * 1000 + 0.0160203; // janus TX + generation-encryption
+            d = ((double) l / 80.0) * 1000 + 0.0368927; // janus TX + generation-encryption
 
             timestamp = a + b + c + d;
             oneWay = timestamp - oneWay;
@@ -171,9 +171,9 @@ UanExperiment::PrintReceivedPacket(Ptr<Socket> socket) {
             in1 >> strpkt1;
             l = strpkt1.length();
             a = (double) Simulator::Now().GetMilliSeconds();
-            b = 0.0161610; // decryption-verification
+            b = 0.0373279; // decryption-verification
             c = ((double) l / 80.0) * 1000; // janus RX
-            d = ((double) l / 80.0) * 1000 + 0.0160203; // janus TX + generation-encryption
+            d = ((double) l / 80.0) * 1000 + 0.0368927; // janus TX + generation-encryption
 
             timestamp = a + b + c + d;
             rtt = timestamp - rtt + (double)numFails * 420000.0;
@@ -245,7 +245,7 @@ void UanExperiment::SendPacketTo1() {
     double noise = uniformRandomVariable->GetValue (0, 1);
         
     string packet;
-    ifstream in("/home/ttm4128/ccmcargopkt.txt", ios_base::in);
+    ifstream in("/home/ttm4128/aegiscargopkt", ios_base::in);
     in >> packet;
     int l = packet.length();
     double numL = l;
@@ -288,7 +288,7 @@ void UanExperiment::SendPacketTo1() {
 
     Simulator::Schedule(Seconds(0), &UanExperiment::SendSinglePacket, this, *node, pkt, dst);
     rtt = (double)(Simulator::Now().GetMilliSeconds());
-    timestamp = oneWay = (double)(Simulator::Now().GetMilliSeconds()) + 0.0160203 + (numL / 80.0) * 1000; // Now + enc + Janus encoding
+    timestamp = oneWay = (double)(Simulator::Now().GetMilliSeconds()) + 0.0368927 + (numL / 80.0) * 1000; // Now + enc + Janus encoding
     //NS_LOG_UNCOND("Sent packet to 1, timestamp: " << to_string(timestamp) << " ms, distance: " << m_nodes.Get(1)->GetObject<MobilityModel> ()->GetPosition().x << " m");
 }
 
@@ -298,7 +298,7 @@ void UanExperiment::SendPacketTo0() {
     node++;
     
     string packet;
-    ifstream in("/home/ttm4128/ccmcargopkt.txt", ios_base::in);
+    ifstream in("/home/ttm4128/aegiscargopkt", ios_base::in);
     in >> packet;
     int l = packet.length();
     in >> packet;
@@ -330,7 +330,7 @@ void UanExperiment::SendPacketTo0() {
     Ptr<Packet> pkt = Create<Packet> (janusDecArr, l / 8);
     //cout << "timestamp at sendto0: " << timestamp << endl;
     Simulator::Schedule(Seconds(0), &UanExperiment::SendSinglePacket, this, *node, pkt, dst);
-    timestamp += 0.0160203 + (double)l / 80; // Now + gen-enc + Janus encoding
+    timestamp += 0.0368927 + (double)l / 80; // Now + gen-enc + Janus encoding
     //NS_LOG_UNCOND("Sent packet to 0, timestamp: " << to_string(timestamp));
 }
 
